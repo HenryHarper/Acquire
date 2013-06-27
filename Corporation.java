@@ -95,4 +95,9 @@ public class Corporation {
 	public Color getColor() {
 		return background;
 	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
 }

@@ -94,4 +94,13 @@ public class Tile {
 	public int getCol() {
 		return col;
 	}
+
+	public String getName() {
+		return name;
+	}
+
+	@Override
+	public String toString() {
+		return name;
+	}
 }

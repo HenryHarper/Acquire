@@ -22,10 +22,9 @@ public class Deck {
 		pileIndex = numPlayers;
 	}
 
-	public int getStock(int playerNum, int corporationNum) {
+	public int getStock(int playerNum, Corporation corporation) {
 		validatePlayer(playerNum);
-		validateCorporation(corporationNum);
-		return stock[playerNum][corporationNum];
+		return stock[playerNum][corporation.getID()];
 	}
 
 	public int[] getHand(int playerNum) {
@@ -33,19 +32,17 @@ public class Deck {
 		return stock[playerNum];
 	}
 
-	public int getRemaining(int corporationNum) {
-		validateCorporation(corporationNum);
-		return stock[pileIndex][corporationNum];
+	public int getRemaining(Corporation corporation) {
+		return stock[pileIndex][corporation.getID()];
 	}
 
-	public List<Integer> getSortedStockHolders(int corporationNum) {
-		validateCorporation(corporationNum);
+	public List<Integer> getSortedStockHolders(Corporation corporation) {
 		List<Integer> sortedList = Lists.<Integer>newArrayListWithCapacity(pileIndex);
 		for(int i = 0; i < pileIndex; i++) {
-			int currStock = stock[i][corporationNum];
+			int currStock = stock[i][corporation.getID()];
 			if(currStock > 0) {
 				int j = 0;
-				while(j < sortedList.size() && currStock <= stock[sortedList.get(j).intValue()][corporationNum]) {
+				while(j < sortedList.size() && currStock <= stock[sortedList.get(j).intValue()][corporation.getID()]) {
 					j++;
 				}
 				sortedList.add(j, new Integer(i));
@@ -54,9 +51,9 @@ public class Deck {
 		return sortedList;
 	}
 
-	public boolean draw(int playerNum, int corporationNum, int quantity) {
+	public boolean draw(int playerNum, Corporation corporation, int quantity) {
 		validatePlayer(playerNum);
-		validateCorporation(corporationNum);
+		int corporationNum = corporation.getID();
 		if(stock[pileIndex][corporationNum] < quantity) {
 			throw new IllegalArgumentException("Deck.draw: not enough stock remaining");
 		}
@@ -68,12 +65,6 @@ public class Deck {
 	private void validatePlayer(int playerNum) {
 		if(playerNum < 0 || playerNum >= pileIndex) {
 			throw new IllegalArgumentException("Deck: invalid player");
-		}
-	}
-
-	private void validateCorporation(int corporationNum) {
-		if(corporationNum < 0 || corporationNum >= stock[pileIndex].length) {
-			throw new IllegalArgumentException("Deck: invalid corporation");
 		}
 	}
 }

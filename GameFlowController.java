@@ -16,8 +16,7 @@ public class GameFlowController {
 	private List<String> names;
 	private int turnPlayerNum;
 
-	private int savedRow;
-	private int savedCol;
+	private Tile savedTile;
 	private int savedKiller;
 	private List<Corporation> savedMergeList;
 	private List<Integer> savedTSKOrder;
@@ -31,11 +30,14 @@ public class GameFlowController {
 		this.names = Lists.<String>newArrayListWithCapacity(MAX_PLAYERS);
 		this.turnPlayerNum = 0;
 
-		this.savedRow = -1;
-		this.savedCol = -1;
+		this.savedTile = null;
 		this.savedKiller = -1;
 		this.savedMergeList = Lists.<Corporation>newArrayListWithCapacity(Corporation.NUM_ACTUAL_CORPORATIONS);
 		this.savedTSKOrder = Lists.<Integer>newLinkedList();
+	}
+
+	public Board getBoard() {
+		return board;
 	}
 
 	public int playerJoined(MessageSender out) {
@@ -52,7 +54,7 @@ public class GameFlowController {
 		}
 	}
 
-	public void playerTSK(int playerNum, int corporation, int traded, int sold, int kept) {
+	public void playerTSK(int playerNum, Corporation corporation, int traded, int sold, int kept) {
 		for(int i = 0; i < outs.size(); i++) {
 			if(i != playerNum) {
 				outs.get(i).tskMsg(playerNum, corporation, traded, sold, kept);
@@ -60,14 +62,12 @@ public class GameFlowController {
 		}
 
 		if(savedTSKOrder.size() == 0) {
-			Corporation dyingCorp = board.getCorporation(corporation);
+			board.mergeCorporation(savedMergeList.get(0), corporation);
 
-			board.mergeCorporation(savedMergeList.get(0), dyingCorp);
-
-			savedMergeList.remove(dyingCorp);
+			savedMergeList.remove(corporation);
 			mergeCorporations(savedKiller, savedMergeList);
 		} else {
-			outs.get(savedTSKOrder.remove(0).intValue()).tskMsg(-1, corporation, -1, -1, -1);
+			outs.get(savedTSKOrder.remove(0).intValue()).tskPromptMsg(corporation);
 		}
 	}
 
@@ -78,20 +78,15 @@ public class GameFlowController {
 
 		Corporation toKill = savedMergeList.get(toKillIndex);
 
-		List<Integer> sortedHolders = deck.getSortedStockHolders(toKill.getID());
-
+		List<Integer> sortedHolders = deck.getSortedStockHolders(toKill);
 		int numHolders = sortedHolders.size();
-
-		savedTSKOrder.clear();
-
 		List<List<Integer>> tieredHolders = Lists.<List<Integer>>newArrayListWithCapacity(numHolders);
-
-		int i = 0;
-		while(i < numHolders) {
-			int currStock = deck.getStock(sortedHolders.get(i).intValue(), toKill.getID());
+		savedTSKOrder.clear();
+		for(int i = 0; i < numHolders;) {
+			int currStock = deck.getStock(sortedHolders.get(i).intValue(), toKill);
 			List<Integer> tempTier = Lists.<Integer>newLinkedList();
 			int j = i;
-			while(j < numHolders && deck.getStock(sortedHolders.get(j).intValue(), toKill.getID()) == currStock) {
+			while(j < numHolders && deck.getStock(sortedHolders.get(j).intValue(), toKill) == currStock) {
 				tempTier.add(sortedHolders.get(j));
 				j++;
 			}
@@ -124,10 +119,10 @@ public class GameFlowController {
 			}
 
 			for(MessageSender out : outs) {
-				out.killedMsg(majorityHolders, minorityHolders, toKill.getCost());
+				out.killedMsg(savedKiller, majorityHolders, minorityHolders, toKill.getCost());
 			}
 
-			outs.get(savedKiller).tskMsg(-1, toKill.getID(), -1, -1, -1);
+			outs.get(savedKiller).tskPromptMsg(toKill);
 		}
 	}
 
@@ -135,10 +130,14 @@ public class GameFlowController {
 		if(toMerge.size() == 0) {
 			throw new IllegalArgumentException("GameFlowController.mergeCorporations: empty list merge list");
 		} else if(toMerge.size() == 1) {
-			board.changeTile(board.getTile(savedRow, savedCol), toMerge.get(0));
+			board.changeTile(savedTile, toMerge.get(0));
 
 			for(MessageSender out : outs) {
-				out.placeTileMsg(-1, savedRow, savedCol, toMerge.get(0).getID());
+				out.placeTileMsg(-1, savedTile, toMerge.get(0));
+			}
+
+			if(playerNum >= 0) {
+				outs.get(playerNum).sbPromptMsg();
 			}
 		} else {
 			int canDieIndex = toMerge.size() - 1;
@@ -161,34 +160,38 @@ public class GameFlowController {
 		}
 	}
 
-	public void tilePlayed(int playerNum, int row, int col) {
-		List<Corporation> adjacentCorps = board.getAdjacentCorporations(row, col);
+	public void tilePlayed(int playerNum, Tile tile) {
+		Corporation diagCorp = board.getCorporation(Corporation.DIAGONAL);
+		List<Corporation> adjacentCorps = board.getAdjacentCorporations(tile);
 		if(adjacentCorps.size() == 0) {
-			board.changeTile(board.getTile(row, col), board.getCorporation(Corporation.DIAGONAL));
-
+			board.changeTile(tile, diagCorp);
 			for(MessageSender out : outs) {
-				out.placeTileMsg(playerNum, row, col, Corporation.DIAGONAL);
+				out.placeTileMsg(playerNum, tile, diagCorp);
+			}
+			if(playerNum >= 0) {
+				outs.get(playerNum).sbPromptMsg();
 			}
 		} else if(adjacentCorps.size() == 1) {
-			int adjacentCorpID = adjacentCorps.get(0).getID();
-
-			if(adjacentCorpID == Corporation.DIAGONAL) {
+			Corporation adjacentCorp = adjacentCorps.get(0);
+			if(adjacentCorp.getID() == Corporation.DIAGONAL) {
 				outs.get(playerNum).createCorporationPromptMsg(board.getCreateableCorporations());
 			}
 			else {
-				board.changeTile(board.getTile(row, col), adjacentCorps.get(0));
+				board.changeTile(tile, adjacentCorps.get(0));
 
 				for(MessageSender out : outs) {
-					out.placeTileMsg(playerNum, row, col, adjacentCorpID);
+					out.placeTileMsg(playerNum, tile, adjacentCorp);
 				}
+			}
+			if(playerNum >= 0) {
+				outs.get(playerNum).sbPromptMsg();
 			}
 		} else {
 			for(MessageSender out : outs) {
-				out.placeTileMsg(playerNum, row, col, Corporation.DIAGONAL);
+				out.placeTileMsg(playerNum, tile, diagCorp);
 			}
 
-			savedRow = row;
-			savedCol = col;
+			savedTile = tile;
 			mergeCorporations(playerNum, adjacentCorps);
 		}
 	}
@@ -216,7 +219,7 @@ public class GameFlowController {
 		for(MessageSender out : outs) {
 			Tile tile = bag.drawTile();
 			for(MessageSender o : outs) {
-				o.placeTileMsg(-1, tile.getRow(), tile.getCol(), Corporation.DIAGONAL);
+				o.placeTileMsg(-1, tile, board.getCorporation(Corporation.DIAGONAL));
 			}
 
 			for(int j = 0; j < GameFlowController.HAND_SIZE; j++) {
@@ -235,22 +238,23 @@ public class GameFlowController {
 		}
 
 		for(int i = 0; i < outs.size(); i++) {
-			outs.get(i).playerNamesMsg(names);
-			outs.get(i).startGameMsg(i);
+			MessageSender out = outs.get(i);
+			out.playerNamesMsg(names);
+			out.startGameMsg(i);
+			out.turnMsg(0);
 		}
 	}
 
-	public void createCorporation(int playerNum, int corporationID) {
-		Corporation corporation = board.getCorporation(corporationID);
+	public void createCorporation(int playerNum, Corporation corporation) {
 		LinkedList<Tile> toChange = Lists.<Tile>newLinkedList();
-		toChange.addLast(board.getTile(savedRow, savedCol));
+		toChange.addLast(savedTile);
 		while(toChange.size() > 0) {
 			Tile currTile = toChange.removeFirst();
 			int currRow = currTile.getRow();
 			int currCol = currTile.getCol();
 			if(currTile.getCorporation().getID() == Corporation.DIAGONAL) {
 				for(MessageSender out : outs) {
-					out.placeTileMsg(-1, currRow, currCol, corporationID);
+					out.placeTileMsg(-1, currTile, corporation);
 				}
 
 				if(currRow > 0) {
@@ -268,19 +272,19 @@ public class GameFlowController {
 			}
 		}
 
-		deck.draw(playerNum, corporationID, 1);
+		deck.draw(playerNum, corporation, 1);
 		for(MessageSender out : outs) {
 			out.createCorporationMsg(playerNum, corporation);
 		}
 	}
 
-	public void playerSB(int playerNum, int[] sold, int[] bought) {
-		for(int i = 0; i < sold.length; i++) {
-			deck.draw(playerNum, i, -sold[i]);
+	public void playerSB(int playerNum, List<Integer> sold, List<Integer> bought) {
+		for(int i = 0; i < sold.size(); i++) {
+			deck.draw(playerNum, board.getCorporation(i), -sold.get(i).intValue());
 		}
 
-		for(int i = 0; i < bought.length; i++) {
-			deck.draw(playerNum, i, bought[i]);
+		for(int i = 0; i < bought.size(); i++) {
+			deck.draw(playerNum, board.getCorporation(i), bought.get(i).intValue());
 		}
 
 		for(MessageSender out : outs) {
@@ -301,7 +305,8 @@ public class GameFlowController {
 			}
 
 			for(MessageSender out : outs) {
-				out.endTurnMsg(playerNum, endGame, turnPlayerNum);
+				out.endTurnMsg(playerNum, false);
+				out.turnMsg(turnPlayerNum);
 			}
 		}
 	}

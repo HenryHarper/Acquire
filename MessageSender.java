@@ -3,20 +3,22 @@ import java.util.List;
 
 public class MessageSender {
 	public static final String PLAYER_NAMES_MSG = "00";
-	public static final String PLACE_TILES_MSG = "01";
-	public static final String CHAT_MSG = "02";
-	public static final String START_GAME_MSG = "03";
-	public static final String DEAL_TILE_MSG = "04";
-	public static final String CREATE_CORP_PROMPT_MSG = "05";
-	public static final String CREATE_CORP_MSG = "06";
-	public static final String KILL_PROMPT_MSG = "07";
-	public static final String KILL_MSG = "08";
-	public static final String KILLED_MSG = "09";
-	public static final String TSK_MSG = "10";
-	public static final String SB_PROMPT_MSG = "11";
-	public static final String SB_MSG = "12";
-	public static final String END_TURN_MSG = "13";
-	public static final String GAME_OVER_MSG = "14";
+	public static final String TURN_MSG = "01";
+	public static final String PLACE_TILE_MSG = "02";
+	public static final String CHAT_MSG = "03";
+	public static final String START_GAME_MSG = "04";
+	public static final String DEAL_TILE_MSG = "05";
+	public static final String CREATE_CORP_PROMPT_MSG = "06";
+	public static final String CREATE_CORP_MSG = "07";
+	public static final String KILL_PROMPT_MSG = "08";
+	public static final String KILL_MSG = "09";
+	public static final String KILLED_MSG = "10";
+	public static final String TSK_PROMPT_MSG = "11";
+	public static final String TSK_MSG = "12";
+	public static final String SB_PROMPT_MSG = "13";
+	public static final String SB_MSG = "14";
+	public static final String END_TURN_MSG = "15";
+	public static final String GAME_OVER_MSG = "16";
 
 	public static final int BUFFERSIZE = 2048;
 	public static final char STX = (char) 2;
@@ -54,8 +56,12 @@ public class MessageSender {
 		passMessage(message.toString());
 	}
 
-	public void placeTileMsg(int playerNum, int row, int col, int corporation) {
-		passMessage(STX + PLACE_TILES_MSG + playerNum + ETX + row + ETX + col + ETX + corporation + ETX);
+	public void turnMsg(int playerNum) {
+		passMessage(STX + TURN_MSG + ETX + playerNum + ETX);
+	}
+
+	public void placeTileMsg(int playerNum, Tile tile, Corporation corporation) {
+		passMessage(STX + PLACE_TILE_MSG + playerNum + ETX + tile.getRow() + ETX + tile.getCol() + ETX + corporation.getID() + ETX);
 	}
 
 	public void chatMsg(String message) {
@@ -87,13 +93,13 @@ public class MessageSender {
 		passMessage(STX + CREATE_CORP_MSG + playerNum + ETX + toCreate.getID() + ETX);
 	}
 
-	public void killPromptMsg(List<Corporation> options, int firstValidIndex) {
+	public void killPromptMsg(List<Corporation> killable, int firstValidIndex) {
 		StringBuilder message = new StringBuilder(32);
 		message.append(STX);
 		message.append(KILL_PROMPT_MSG);
-		message.append(options.size());
+		message.append(killable.size());
 		message.append(ETX);
-		for(Corporation corp : options) {
+		for(Corporation corp : killable) {
 			message.append(corp.getID());
 			message.append(ETX);
 		}
@@ -106,10 +112,12 @@ public class MessageSender {
 		passMessage(STX + KILL_MSG + killIndex + ETX);
 	}
 
-	public void killedMsg(List<Integer> majorityHolders, List<Integer> minorityHolders, int stockPrice) {
+	public void killedMsg(int playerNum, List<Integer> majorityHolders, List<Integer> minorityHolders, int stockPrice) {
 		StringBuilder message = new StringBuilder(32);
 		message.append(STX);
 		message.append(KILLED_MSG);
+		message.append(playerNum);
+		message.append(ETX);
 		message.append(majorityHolders.size());
 		message.append(ETX);
 		for(Integer player : majorityHolders) {
@@ -127,27 +135,31 @@ public class MessageSender {
 		passMessage(message.toString());
 	}
 
-	public void tskMsg(int playerNum, int corporation, int traded, int sold, int kept) {
-		passMessage(STX + TSK_MSG + playerNum + ETX + corporation + ETX + traded + ETX + sold + ETX + kept + ETX);
+	public void tskPromptMsg(Corporation corporation) {
+		passMessage(STX + TSK_PROMPT_MSG + corporation.getID() + ETX);
+	}
+
+	public void tskMsg(int playerNum, Corporation corporation, int traded, int sold, int kept) {
+		passMessage(STX + TSK_MSG + playerNum + ETX + corporation.getID() + ETX + traded + ETX + sold + ETX + kept + ETX);
 	}
 
 	public void sbPromptMsg() {
 		passMessage(STX + SB_PROMPT_MSG + ETX);
 	}
 
-	public void sbMsg(int playerNum, int[] sold, int[] bought) {
+	public void sbMsg(int playerNum, List<Integer> sold, List<Integer> bought) {
 		StringBuilder message = new StringBuilder(32);
 		message.append(STX);
 		message.append(SB_MSG);
 		message.append(playerNum);
 		message.append(ETX);
-		message.append(sold.length);
+		message.append(sold.size());
 		message.append(ETX);
 		for(int quantity : sold) {
 			message.append(quantity);
 			message.append(ETX);
 		}
-		message.append(bought.length);
+		message.append(bought.size());
 		message.append(ETX);
 		for(int quantity : bought) {
 			message.append(quantity);
@@ -156,8 +168,8 @@ public class MessageSender {
 		passMessage(message.toString());
 	}
 
-	public void endTurnMsg(int playerNum, boolean endGame, int turnPlayerNum) {
-		passMessage(STX + END_TURN_MSG + playerNum + ETX + endGame + ETX + turnPlayerNum + ETX);
+	public void endTurnMsg(int playerNum, boolean endGame) {
+		passMessage(STX + END_TURN_MSG + playerNum + ETX + endGame + ETX);
 	}
 
 	public void gameOverMsg(int playerNum) {

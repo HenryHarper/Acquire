@@ -114,7 +114,9 @@ public class Board {
 		}
 	}
 
-	public List<Corporation> getAdjacentCorporations(int row, int col) {
+	public List<Corporation> getAdjacentCorporations(Tile tile) {
+		int row = tile.getRow();
+		int col = tile.getCol();
 		List<Corporation> adjacentCorps = Lists.<Corporation>newArrayListWithCapacity(4);
 		if(row > 0) {
 			insertCorporationBySize(adjacentCorps, tiles[row - 1][col].getCorporation());

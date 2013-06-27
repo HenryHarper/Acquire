@@ -1,18 +1,18 @@
 import java.io.DataInputStream;
 import java.net.Socket;
+import java.util.List;
 
-public class ServerMessageHandler extends Thread {
+import com.google.common.collect.Lists;
+
+public class ServerMessageHandler extends MessageHandler {
 	private GameFlowController gameFlowController;
 	private Socket clientSocket;
 	private DataInputStream in;
 	private boolean cont;
 	private int clientPlayerNum;
 
-	private String message;
-	private int b;
-	private int c;
-
 	public ServerMessageHandler(GameFlowController gameFlowController, int playerNum, Socket clientSocket) {
+		super(gameFlowController.getBoard());
 		this.gameFlowController = gameFlowController;
 		this.clientPlayerNum = playerNum;
 		this.clientSocket = clientSocket;
@@ -27,14 +27,10 @@ public class ServerMessageHandler extends Thread {
 		cont = true;
 	}
 
-	private String nextArg() {
-		String nextArg = message.substring(b, c);
-		b = c + 1;
-		c = message.indexOf(MessageSender.ETX, b);
-		return nextArg;
+	public void setPlayerNum(int playerNum) {
+		this.clientPlayerNum = playerNum;
 	}
 
-	@Override
 	public void run() {
 		int msgsize;
 		byte[] bytes = new byte[MessageSender.BUFFERSIZE];
@@ -63,60 +59,50 @@ public class ServerMessageHandler extends Thread {
 						c = message.indexOf(MessageSender.ETX, b);
 						String type = message.substring(a + 1, b);
 						switch(type) {
-							case MessageSender.PLAYER_NAMES_MSG: // playerNamesMsg(String playerName)
-								gameFlowController.receivedPlayerName(nextArg());
+							case MessageSender.PLAYER_NAMES_MSG:
+								gameFlowController.receivedPlayerName(readString());
 								break;
 
-							case MessageSender.PLACE_TILES_MSG: // placeTileMsg(int playerNum, int row, int col, int corporation)
-								int row = Integer.parseInt(nextArg());
-								int col = Integer.parseInt(nextArg());
-								gameFlowController.tilePlayed(clientPlayerNum, row, col);
+							case MessageSender.PLACE_TILE_MSG:
+								readInt();
+								gameFlowController.tilePlayed(clientPlayerNum, readTile());
 								break;
 
-							case MessageSender.CHAT_MSG: // chatMsg(String message)
-								gameFlowController.chatMessage(clientPlayerNum, nextArg());
+							case MessageSender.CHAT_MSG:
+								gameFlowController.chatMessage(clientPlayerNum, readString());
 								break;
 
-							case MessageSender.START_GAME_MSG: // startGameMsg(int playerNum, List<String> playerNames)
+							case MessageSender.START_GAME_MSG:
 								gameFlowController.startGame();
 								break;
 
-							case MessageSender.CREATE_CORP_MSG: // createCorporationMsg(int playerNum, Corporation toCreate)
-								int playerNum = Integer.parseInt(nextArg());
-								int toCreate = Integer.parseInt(nextArg());
-								gameFlowController.createCorporation(playerNum, toCreate);
+							case MessageSender.CREATE_CORP_MSG:
+								gameFlowController.createCorporation(readInt(), readCorp());
 								break;
 
-							case MessageSender.KILL_MSG: // killPromptResponseMsg(int killIndex)
-								gameFlowController.killCorporation(Integer.parseInt(nextArg()));
+							case MessageSender.KILL_MSG:
+								gameFlowController.killCorporation(readInt());
 								break;
 
-							case MessageSender.TSK_MSG: // tskMsg(int playerNum, int corporation, int traded, int sold, int kept)
-								playerNum = Integer.parseInt(nextArg());
-								int corporation = Integer.parseInt(nextArg());
-								int traded = Integer.parseInt(nextArg());
-								int sold = Integer.parseInt(nextArg());
-								int kept = Integer.parseInt(nextArg());
-								gameFlowController.playerTSK(playerNum, corporation, traded, sold, kept);
+							case MessageSender.TSK_MSG:
+								gameFlowController.playerTSK(readInt(), readCorp(), readInt(), readInt(), readInt());
 								break;
 
-							case MessageSender.SB_MSG: // sbMsg(int playerNum, int[] sold, int[] bought)
-								playerNum = Integer.parseInt(nextArg());
-								int[] soldList = new int[Integer.parseInt(nextArg())];
-								for(int i = 0; i < soldList.length; i++) {
-									soldList[i] = Integer.parseInt(nextArg());
+							case MessageSender.SB_MSG:
+								int playerNum = readInt();
+								List<Integer> sold = Lists.newArrayListWithCapacity(readInt());
+								for(int i = 0; i < sold.size(); i++) {
+									sold.add(readInt());
 								}
-								int[] boughtList = new int[Integer.parseInt(nextArg())];
-								for(int i = 0; i < boughtList.length; i++) {
-									boughtList[i] = Integer.parseInt(nextArg());
+								List<Integer> bought = Lists.newArrayListWithCapacity(readInt());
+								for(int i = 0; i < bought.size(); i++) {
+									bought.add(readInt());
 								}
-								gameFlowController.playerSB(playerNum, soldList, boughtList);
+								gameFlowController.playerSB(playerNum, sold, bought);
 								break;
 
-							case MessageSender.END_TURN_MSG: // endTurnMsg(int playerNum, boolean endGame, int turnPlayerNum)
-								playerNum = Integer.parseInt(nextArg());
-								boolean endGame = Boolean.parseBoolean(nextArg());
-								gameFlowController.endTurn(playerNum, endGame);
+							case MessageSender.END_TURN_MSG:
+								gameFlowController.endTurn(readInt(), readBoolean());
 								break;
 
 							default:
@@ -129,10 +115,6 @@ public class ServerMessageHandler extends Thread {
 				}
 			}
 		}
-	}
-
-	public void setPlayerNum(int playerNum) {
-		this.clientPlayerNum = playerNum;
 	}
 
 	public void close() {
