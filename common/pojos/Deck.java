@@ -1,4 +1,8 @@
+package common.pojos;
+
 import java.util.List;
+
+import server.GameFlowController;
 
 import com.google.common.collect.Lists;
 

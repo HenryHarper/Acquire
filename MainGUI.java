@@ -23,6 +23,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
+import client.ClientGUI;
+
+import common.messaging.MessageSender;
+
+import server.ServerGUI;
+
 public class MainGUI extends JFrame implements ActionListener {
 	private static final long serialVersionUID = 1L;
 

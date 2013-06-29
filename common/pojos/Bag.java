@@ -1,3 +1,5 @@
+package common.pojos;
+
 import java.util.List;
 
 import com.google.common.collect.Lists;

@@ -1,8 +1,17 @@
+package server;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+
 import com.google.common.collect.Lists;
+
+import common.messaging.MessageSender;
+import common.pojos.Bag;
+import common.pojos.Board;
+import common.pojos.Corporation;
+import common.pojos.Deck;
+import common.pojos.Tile;
 
 public class GameFlowController {
 	public static final int MIN_PLAYERS = 3;

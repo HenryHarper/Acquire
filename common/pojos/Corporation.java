@@ -1,3 +1,4 @@
+package common.pojos;
 import java.awt.Color;
 import java.util.List;
 

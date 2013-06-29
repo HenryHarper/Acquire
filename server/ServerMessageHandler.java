@@ -1,8 +1,13 @@
+package server;
+
 import java.io.DataInputStream;
 import java.net.Socket;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+
+import common.messaging.MessageHandler;
+import common.messaging.MessageSender;
 
 public class ServerMessageHandler extends MessageHandler {
 	private GameFlowController gameFlowController;

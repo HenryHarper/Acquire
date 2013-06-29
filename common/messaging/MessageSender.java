@@ -1,5 +1,9 @@
+package common.messaging;
 import java.io.DataOutputStream;
 import java.util.List;
+
+import common.pojos.Corporation;
+import common.pojos.Tile;
 
 public class MessageSender {
 	public static final String PLAYER_NAMES_MSG = "00";
