@@ -57,7 +57,7 @@ public class MessageSender {
 	}
 
 	public void turnMsg(int playerNum) {
-		passMessage(STX + TURN_MSG + ETX + playerNum + ETX);
+		passMessage(STX + TURN_MSG + playerNum + ETX);
 	}
 
 	public void placeTileMsg(int playerNum, Tile tile, Corporation corporation) {
@@ -112,11 +112,13 @@ public class MessageSender {
 		passMessage(STX + KILL_MSG + killIndex + ETX);
 	}
 
-	public void killedMsg(int playerNum, List<Integer> majorityHolders, List<Integer> minorityHolders, int stockPrice) {
+	public void killedMsg(int playerNum, Corporation dying, List<Integer> majorityHolders, List<Integer> minorityHolders) {
 		StringBuilder message = new StringBuilder(32);
 		message.append(STX);
 		message.append(KILLED_MSG);
 		message.append(playerNum);
+		message.append(ETX);
+		message.append(dying.getID());
 		message.append(ETX);
 		message.append(majorityHolders.size());
 		message.append(ETX);
@@ -130,8 +132,6 @@ public class MessageSender {
 			message.append(player.intValue());
 			message.append(ETX);
 		}
-		message.append(stockPrice);
-		message.append(ETX);
 		passMessage(message.toString());
 	}
 
@@ -139,8 +139,8 @@ public class MessageSender {
 		passMessage(STX + TSK_PROMPT_MSG + corporation.getID() + ETX);
 	}
 
-	public void tskMsg(int playerNum, Corporation corporation, int traded, int sold, int kept) {
-		passMessage(STX + TSK_MSG + playerNum + ETX + corporation.getID() + ETX + traded + ETX + sold + ETX + kept + ETX);
+	public void tskMsg(int playerNum, Corporation dying, Corporation surviving, int traded, int sold, int kept) {
+		passMessage(STX + TSK_MSG + playerNum + ETX + dying.getID() + ETX + surviving.getID() + ETX + traded + ETX + sold + ETX + kept + ETX);
 	}
 
 	public void sbPromptMsg() {

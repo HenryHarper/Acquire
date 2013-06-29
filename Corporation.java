@@ -16,6 +16,9 @@ public class Corporation {
 	public static final int BAG = 8;
 	public static final int NUM_CORPORATIONS = 9;
 
+	private static final int majorityBonusMultiplier = 10;
+	private static final int minorityBonusMultiplier = 5;
+
 	private Color background;
 
 	private int id;
@@ -90,6 +93,14 @@ public class Corporation {
 
 	public int getCost() {
 		return cost;
+	}
+
+	public int getMajorityBonus() {
+		return cost * majorityBonusMultiplier;
+	}
+
+	public int getMinorityBonus() {
+		return cost * minorityBonusMultiplier;
 	}
 
 	public Color getColor() {

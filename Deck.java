@@ -8,18 +8,18 @@ public class Deck {
 	private int[][] stock;
 	private int pileIndex;
 
-	public Deck(int numPlayers) {
-		stock = new int[numPlayers + 1][Corporation.NUM_ACTUAL_CORPORATIONS];
-		for(int i = 0; i < numPlayers; i++) {
+	public Deck() {
+		stock = new int[GameFlowController.MAX_PLAYERS + 1][Corporation.NUM_ACTUAL_CORPORATIONS];
+		for(int i = 0; i < GameFlowController.MAX_PLAYERS; i++) {
 			for(int j = 0; j < stock[i].length; j++) {
 				stock[i][j] = 0;
 			}
 		}
-		for(int j = 0; j < stock[numPlayers].length; j++) {
-			stock[numPlayers][j] = MAX_STOCK;
+		for(int j = 0; j < stock[GameFlowController.MAX_PLAYERS].length; j++) {
+			stock[GameFlowController.MAX_PLAYERS][j] = MAX_STOCK;
 		}
 
-		pileIndex = numPlayers;
+		pileIndex = GameFlowController.MAX_PLAYERS;
 	}
 
 	public int getStock(int playerNum, Corporation corporation) {
@@ -51,7 +51,7 @@ public class Deck {
 		return sortedList;
 	}
 
-	public boolean draw(int playerNum, Corporation corporation, int quantity) {
+	public void draw(int playerNum, Corporation corporation, int quantity) {
 		validatePlayer(playerNum);
 		int corporationNum = corporation.getID();
 		if(stock[pileIndex][corporationNum] < quantity) {
@@ -59,7 +59,16 @@ public class Deck {
 		}
 		stock[pileIndex][corporationNum] -= quantity;
 		stock[playerNum][corporationNum] += quantity;
-		return true;
+	}
+
+	public void place(int playerNum, Corporation corporation, int quantity) {
+		validatePlayer(playerNum);
+		int corporationNum = corporation.getID();
+		if(stock[playerNum][corporationNum] < quantity) {
+			throw new IllegalArgumentException("Deck.place: not enough stock owned");
+		}
+		stock[playerNum][corporationNum] -= quantity;
+		stock[pileIndex][corporationNum] += quantity;
 	}
 
 	private void validatePlayer(int playerNum) {

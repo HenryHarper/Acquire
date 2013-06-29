@@ -14,6 +14,7 @@ public class Board {
 	private int y;
 	private int width;
 	private int height;
+	private boolean mouseWithin;
 	private Color foreground;
 	private Color background;
 
@@ -55,6 +56,22 @@ public class Board {
 		}
 		this.width = tempX - x;
 		this.height = tempY - y;
+
+		this.mouseWithin = false;
+	}
+
+	public boolean updateHighlights(int mouseX, int mouseY) {
+		boolean updated = false;
+		boolean wasMouseWithin = mouseWithin;
+		mouseWithin = mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
+		if(mouseWithin || wasMouseWithin) {
+			for(int r = 0; r < tiles.length; r++) {
+				for(int c = 0; c < tiles[r].length; c++) {
+					updated = updated || tiles[r][c].updateHighlight(mouseX, mouseY);
+				}
+			}
+		}
+		return updated;
 	}
 
 	public void paint(Graphics g) {

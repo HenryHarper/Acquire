@@ -5,6 +5,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 public class GameFlowController {
+	public static final int MIN_PLAYERS = 3;
 	public static final int MAX_PLAYERS = 6;
 	public static final int HAND_SIZE = 6;
 
@@ -54,20 +55,20 @@ public class GameFlowController {
 		}
 	}
 
-	public void playerTSK(int playerNum, Corporation corporation, int traded, int sold, int kept) {
+	public void playerTSK(int playerNum, Corporation dying, Corporation surviving, int traded, int sold, int kept) {
 		for(int i = 0; i < outs.size(); i++) {
 			if(i != playerNum) {
-				outs.get(i).tskMsg(playerNum, corporation, traded, sold, kept);
+				outs.get(i).tskMsg(playerNum, dying, surviving, traded, sold, kept);
 			}
 		}
 
 		if(savedTSKOrder.size() == 0) {
-			board.mergeCorporation(savedMergeList.get(0), corporation);
+			board.mergeCorporation(savedMergeList.get(0), dying);
 
-			savedMergeList.remove(corporation);
+			savedMergeList.remove(dying);
 			mergeCorporations(savedKiller, savedMergeList);
 		} else {
-			outs.get(savedTSKOrder.remove(0).intValue()).tskPromptMsg(corporation);
+			outs.get(savedTSKOrder.remove(0).intValue()).tskPromptMsg(dying);
 		}
 	}
 
@@ -108,18 +109,14 @@ public class GameFlowController {
 		} else {
 			List<Integer> majorityHolders = tieredHolders.get(0);
 			List<Integer> minorityHolders;
-			if(majorityHolders.size() > 1) {
-				minorityHolders = Lists.<Integer>newLinkedList();
+			if(majorityHolders.size() > 1 || tieredHolders.size() == 1) {
+				minorityHolders = majorityHolders;
 			} else {
-				if(tieredHolders.size() == 1) {
-					minorityHolders = majorityHolders;
-				} else {
-					minorityHolders = tieredHolders.get(1);
-				}
+				minorityHolders = tieredHolders.get(1);
 			}
 
 			for(MessageSender out : outs) {
-				out.killedMsg(savedKiller, majorityHolders, minorityHolders, toKill.getCost());
+				out.killedMsg(savedKiller, toKill, majorityHolders, minorityHolders);
 			}
 
 			outs.get(savedKiller).tskPromptMsg(toKill);
@@ -214,7 +211,7 @@ public class GameFlowController {
 
 		connectionManager.setAccept(false);
 
-		this.deck = new Deck(outs.size());
+		this.deck = new Deck();
 
 		for(MessageSender out : outs) {
 			Tile tile = bag.drawTile();

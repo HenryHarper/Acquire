@@ -53,7 +53,8 @@ public class ServerMessageHandler extends MessageHandler {
 			} else if(msgsize > 0) {
 				message = new String(bytes, 0, msgsize);
 				int a = message.indexOf(MessageSender.STX, 0);
-				while(a >= 0) {
+				c = 0;
+				while(a >= 0 && c >=0) {
 					try {
 						b = a + 3;
 						c = message.indexOf(MessageSender.ETX, b);
@@ -85,17 +86,19 @@ public class ServerMessageHandler extends MessageHandler {
 								break;
 
 							case MessageSender.TSK_MSG:
-								gameFlowController.playerTSK(readInt(), readCorp(), readInt(), readInt(), readInt());
+								gameFlowController.playerTSK(readInt(), readCorp(), readCorp(), readInt(), readInt(), readInt());
 								break;
 
 							case MessageSender.SB_MSG:
 								int playerNum = readInt();
-								List<Integer> sold = Lists.newArrayListWithCapacity(readInt());
-								for(int i = 0; i < sold.size(); i++) {
+								int count = readInt();
+								List<Integer> sold = Lists.newArrayListWithCapacity(count);
+								for(int i = 0; i < count; i++) {
 									sold.add(readInt());
 								}
-								List<Integer> bought = Lists.newArrayListWithCapacity(readInt());
-								for(int i = 0; i < bought.size(); i++) {
+								count = readInt();
+								List<Integer> bought = Lists.newArrayListWithCapacity(count);
+								for(int i = 0; i < count; i++) {
 									bought.add(readInt());
 								}
 								gameFlowController.playerSB(playerNum, sold, bought);
@@ -110,7 +113,8 @@ public class ServerMessageHandler extends MessageHandler {
 						}
 						a = message.indexOf(MessageSender.STX, c);
 					} catch(Exception e) {
-						System.out.println("ServerMessageHandler: unable to parse message");
+						System.out.println("ServerMessageHandler.run:");
+						e.printStackTrace();
 					}
 				}
 			}

@@ -118,7 +118,7 @@ public class MainGUI extends JFrame implements ActionListener {
 						csocket.close();
 					} else {
 						out.playerNamesMsg(name);
-						ClientGUI clnt = new ClientGUI(csocket, in, out);
+						ClientGUI clnt = new ClientGUI(csocket, in, out, false);
 		      			clnt.setLocation(paddingA + totalWidth + paddingB, paddingA);
 						clnt.setVisible(true);
 					}
@@ -170,7 +170,7 @@ public class MainGUI extends JFrame implements ActionListener {
 						server.close();
 					} else {
 						out.playerNamesMsg(name);
-						ClientGUI clnt = new ClientGUI(csocket, in, out);
+						ClientGUI clnt = new ClientGUI(csocket, in, out, true);
 	    	  			clnt.setLocation(paddingA + totalWidth + paddingB, paddingA);
 						clnt.setVisible(true);
 					}
@@ -205,13 +205,11 @@ public class MainGUI extends JFrame implements ActionListener {
 		if(name.length() == 0) {
 			return false;
 		}
-		boolean complies = true;
 		for(int i = 0; i < name.length(); i++) {
-			if(Character.isLetterOrDigit(name.codePointAt(i))) {
-				complies = false;
-				break;
+			if(!Character.isLetterOrDigit(name.codePointAt(i))) {
+				return false;
 			}
 		}
-		return complies;
+		return true;
 	}
 }
